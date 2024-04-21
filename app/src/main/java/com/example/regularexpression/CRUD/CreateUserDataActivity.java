@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -21,6 +22,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -62,9 +64,11 @@ public class CreateUserDataActivity extends AppCompatActivity {
     private void addUserInfo(String email, String url, String phoneNumberInput, String name) {
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
         FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+        assert firebaseUser != null;
         UserDataModelClass modelClass = new UserDataModelClass(email, url, phoneNumberInput, name);
         databaseReference.child("Users")
-                .child(Objects.requireNonNull(firebaseAuth.getUid()))
+                .child(firebaseUser.getUid())
                 .setValue(modelClass)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
@@ -80,30 +84,34 @@ public class CreateUserDataActivity extends AppCompatActivity {
                     }
                 });
     }
-    ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), results -> {
-        FirebaseStorage.getInstance().getReference().child("images")
-                .child(Objects.requireNonNull(FirebaseAuth.getInstance().getUid()))
-                .child("IMG_" + System.currentTimeMillis())
-                .putFile(results)
-                .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            task.getResult().getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                                @Override
-                                public void onSuccess(Uri uri) {
-                                    url = uri.toString();
-                                    Toast.makeText(CreateUserDataActivity.this, "" + url, Toast.LENGTH_SHORT).show();
-                                    binding.userImage.setImageURI(results);
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(CreateUserDataActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
+    ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), new ActivityResultCallback<Uri>() {
+        @Override
+        public void onActivityResult(Uri results) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            FirebaseStorage.getInstance().getReference().child("UserImages")
+                    .child(user.getUid())
+                    .child("image")
+                    .child("IMG_" + System.currentTimeMillis())
+                    .putFile(results)
+                    .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            if (task.isSuccessful()) {
+                                task.getResult().getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        url = uri.toString();
+                                        binding.userImage.setImageURI(results);
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Toast.makeText(CreateUserDataActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
                         }
-                    }
-                });
+                    });
+        }
     });
     }

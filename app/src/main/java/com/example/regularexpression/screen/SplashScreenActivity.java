@@ -2,6 +2,7 @@ package com.example.regularexpression.screen;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +14,7 @@ import com.example.regularexpression.CRUD.UserInformationActivity;
 import com.example.regularexpression.R;
 import com.example.regularexpression.login.UserLoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class SplashScreenActivity extends AppCompatActivity {
 
@@ -27,12 +29,19 @@ public class SplashScreenActivity extends AppCompatActivity {
             return insets;
         });
         FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-        if (firebaseAuth.getCurrentUser() != null) {
-            startActivity(new Intent(SplashScreenActivity.this, UserInformationActivity.class));
-            finish();
-        } else {
-            startActivity(new Intent(SplashScreenActivity.this, UserLoginActivity.class));
-            finish();
-        }
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (user != null) {
+                    startActivity(new Intent(SplashScreenActivity.this, UserInformationActivity.class));
+                    finish();
+                } else {
+                    startActivity(new Intent(SplashScreenActivity.this, UserLoginActivity.class));
+                    finish();
+                }
+            }
+        }, 4000);
+
     }
 }

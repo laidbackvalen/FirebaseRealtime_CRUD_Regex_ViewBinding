@@ -1,6 +1,8 @@
 package com.example.regularexpression.CRUD;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -10,6 +12,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.bumptech.glide.Glide;
 import com.example.regularexpression.R;
+import com.example.regularexpression.databinding.ActivityUserLoginBinding;
+import com.example.regularexpression.login.UserLoginActivity;
 import com.example.regularexpression.models.UserDataModelClass;
 import com.example.regularexpression.databinding.ActivityUserInformationBinding;
 import com.google.firebase.auth.FirebaseAuth;
@@ -36,6 +40,21 @@ public class UserInformationActivity extends AppCompatActivity {
             return insets;
         });
         retrieveUserdata();
+        binding.editUserInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UpdateUserInfoFragment fragment = new UpdateUserInfoFragment();
+                fragment.show(getSupportFragmentManager(), fragment.getTag());
+            }
+        });
+        binding.logOutImg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                firebaseAuth.signOut();
+                startActivity(new Intent(getApplicationContext(), UserLoginActivity.class));
+                finish();
+            }
+        });
     }
     private void retrieveUserdata() {
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("Users").child(user.getUid());
